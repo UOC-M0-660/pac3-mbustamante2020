@@ -48,8 +48,6 @@ object Network {
             }
             // Apply to All Requests
             defaultRequest {
-                //Log.d("OAuth", "Access Token: ${SessionManager(context).getRefreshToken()} ")
-                //parameter("authorization", SessionManager(context).getAccessToken())
                 // Content Type
                 if (this.method != HttpMethod.Get) contentType(ContentType.Application.Json)
                 accept(ContentType.Application.Json)
