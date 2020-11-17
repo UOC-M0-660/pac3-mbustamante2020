@@ -48,13 +48,17 @@ object Network {
             }
             // Apply to All Requests
             defaultRequest {
+                //parameter("api_key", "some_api_key")
+                header("Client-Id", OAuthConstants.clientID)
+                header("Authorization", "Bearer ${SessionManager(context).getAccessToken()}")
+
                 // Content Type
                 if (this.method != HttpMethod.Get) contentType(ContentType.Application.Json)
                 accept(ContentType.Application.Json)
             }
             // Optional OkHttp Interceptors
             engine {
-                addInterceptor(CurlInterceptor(Loggable { Log.v("Curl", it) }))
+                addInterceptor(CurlInterceptor { Log.v("Curl", it) })
             }
         }
     }
