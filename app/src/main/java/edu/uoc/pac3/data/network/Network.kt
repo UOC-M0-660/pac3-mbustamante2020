@@ -3,9 +3,11 @@ package edu.uoc.pac3.data.network
 import android.content.Context
 import android.util.Log
 import com.moczul.ok2curl.CurlInterceptor
-import com.moczul.ok2curl.logger.Loggable
 import edu.uoc.pac3.data.SessionManager
+import edu.uoc.pac3.data.TwitchApiService
 import edu.uoc.pac3.data.oauth.OAuthConstants
+import edu.uoc.pac3.data.oauth.OAuthFeature
+import edu.uoc.pac3.data.oauth.OAuthTokensResponse
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.*
@@ -14,6 +16,7 @@ import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
 
@@ -35,7 +38,7 @@ object Network {
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
-                        Log.v("Ktor", message)
+                        Log.v("Ktor---", message)
                     }
                 }
                 level = LogLevel.ALL
@@ -45,6 +48,22 @@ object Network {
                 requestTimeoutMillis = 15000L
                 connectTimeoutMillis = 15000L
                 socketTimeoutMillis = 15000L
+            }
+            install(OAuthFeature) {
+                getToken = { SessionManager(context).getAccessToken().toString()}
+                refreshToken = {
+                    val response :OAuthTokensResponse? = createHttpClient(context)
+                            .post<OAuthTokensResponse>(Endpoints.oauthToken) {
+                                parameter("client_id", OAuthConstants.clientID)
+                                parameter("client_secret", OAuthConstants.clientSecret)
+                                parameter("refresh_token", SessionManager(context).getRefreshToken().toString())
+                                parameter("grant_type", "refresh_token")
+                            }
+                    SessionManager(context).saveAccessToken(response?.accessToken.toString())
+                    Log.i("OAuth Network", "OAuth Interceptor ${response?.accessToken.toString()}")
+                    //val tokenTwitch = TwitchApiService(createHttpClient(context)).getNewAccessToken(SessionManager(context).getRefreshToken().toString())
+                    //SessionManager(context).saveAccessToken(tokenTwitch?.accessToken.toString())
+                }
             }
             // Apply to All Requests
             defaultRequest {
