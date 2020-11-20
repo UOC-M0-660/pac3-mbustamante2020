@@ -2,6 +2,7 @@ package edu.uoc.pac3.data.streams
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.util.*
 
 
 /**
@@ -16,5 +17,11 @@ data class Stream(
 
 @Serializable
 data class StreamsResponse(
-    val data: List<Stream>? = null,
+        val data: List<Stream>? = null,
+        val pagination: Pagination? = null
+)
+
+@Serializable
+data class Pagination(
+        val cursor: String? = null
 )

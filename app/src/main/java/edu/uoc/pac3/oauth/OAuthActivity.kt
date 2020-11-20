@@ -96,7 +96,7 @@ class OAuthActivity : AppCompatActivity() {
 
         // Show Loading Indicator
         runOnUiThread {
-            progressBar.visibility = View.VISIBLE;
+            progressBar.visibility = View.VISIBLE
         }
 
         // TODO: Create Twitch Service
