@@ -1,8 +1,8 @@
 package edu.uoc.pac3.oauth
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import edu.uoc.pac3.R
 import kotlinx.android.synthetic.main.activity_login.*
 
