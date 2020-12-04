@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.moczul.ok2curl.CurlInterceptor
 import edu.uoc.pac3.data.SessionManager
-import edu.uoc.pac3.data.TwitchApiService
 import edu.uoc.pac3.data.oauth.OAuthConstants
 import edu.uoc.pac3.data.oauth.OAuthFeature
 import edu.uoc.pac3.data.oauth.OAuthTokensResponse
@@ -16,7 +15,6 @@ import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
 
@@ -49,10 +47,11 @@ object Network {
                 connectTimeoutMillis = 15000L
                 socketTimeoutMillis = 15000L
             }
+
             install(OAuthFeature) {
-                getToken = { SessionManager(context).getAccessToken().toString()}
+                getToken = { SessionManager(context).getAccessToken().toString() }
                 refreshToken = {
-                    val response :OAuthTokensResponse? = createHttpClient(context)
+                    val response: OAuthTokensResponse? = createHttpClient(context)
                             .post<OAuthTokensResponse>(Endpoints.oauthToken) {
                                 parameter("client_id", OAuthConstants.clientID)
                                 parameter("client_secret", OAuthConstants.clientSecret)
@@ -60,17 +59,11 @@ object Network {
                                 parameter("grant_type", "refresh_token")
                             }
                     SessionManager(context).saveAccessToken(response?.accessToken.toString())
-                    Log.i("OAuth Network", "OAuth Interceptor ${response?.accessToken.toString()}")
-                    //val tokenTwitch = TwitchApiService(createHttpClient(context)).getNewAccessToken(SessionManager(context).getRefreshToken().toString())
-                    //SessionManager(context).saveAccessToken(tokenTwitch?.accessToken.toString())
                 }
             }
+
             // Apply to All Requests
             defaultRequest {
-                //parameter("api_key", "some_api_key")
-                header("Client-Id", OAuthConstants.clientID)
-                header("Authorization", "Bearer ${SessionManager(context).getAccessToken()}")
-
                 // Content Type
                 if (this.method != HttpMethod.Get) contentType(ContentType.Application.Json)
                 accept(ContentType.Application.Json)
