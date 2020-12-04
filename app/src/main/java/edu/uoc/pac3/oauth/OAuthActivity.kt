@@ -3,14 +3,15 @@ package edu.uoc.pac3.oauth
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.whenStarted
 import edu.uoc.pac3.R
 import edu.uoc.pac3.data.SessionManager
 import edu.uoc.pac3.data.TwitchApiService
@@ -20,9 +21,10 @@ import edu.uoc.pac3.data.oauth.OAuthConstants
 import edu.uoc.pac3.data.oauth.OAuthTokensResponse
 import edu.uoc.pac3.twitch.streams.StreamsActivity
 import kotlinx.android.synthetic.main.activity_oauth.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 
 class OAuthActivity : AppCompatActivity() {
@@ -63,16 +65,12 @@ class OAuthActivity : AppCompatActivity() {
                             // This is our request, obtain the code!
                             request.url.getQueryParameter("code")?.let { code ->
                                 // Got it!
-                                GlobalScope.launch { // launch a new coroutine in background and continue
-                                    onAuthorizationCodeRetrieved(code)
-                                    loadActivity()
-                                }
-                                Log.d("OAuth", "Here is the authorization code! $code")
-                                return false
-
+                                onAuthorizationCodeRetrieved(code)
+                                return true
                             } ?: run {
                                 // User cancelled the login flow
-                                // TODO: Handle error
+                                loginIntent()
+                                return true
                             }
                         }
                     }
@@ -80,42 +78,50 @@ class OAuthActivity : AppCompatActivity() {
                 return super.shouldOverrideUrlLoading(view, request)
             }
         }
-
         // Load OAuth Uri
         webView.settings.javaScriptEnabled = true
         webView.loadUrl(uri.toString())
     }
 
-    private fun loadActivity() {
-        startActivity(Intent(this, StreamsActivity::class.java))
+    private fun loginIntent() {
+        Toast.makeText(applicationContext, R.string.error_oauth, Toast.LENGTH_LONG).show()
+        startActivity(Intent(this, LoginActivity::class.java))
+        finish()
+    }
+
+    private fun streamsIntent() {
+        startActivity(Intent(this@OAuthActivity, StreamsActivity::class.java))
+        finish()
     }
 
     // Call this method after obtaining the authorization code
     // on the WebView to obtain the tokens
     private fun onAuthorizationCodeRetrieved(authorizationCode: String) {
+        //CoroutineScope(Dispatchers.Main).launch {
+        lifecycleScope.launch {
+            whenStarted {
+                // Show Loading Indicator
+                withContext(Dispatchers.Main) {
+                    progressBar.visibility = View.VISIBLE
+                }
 
-        // Show Loading Indicator
-        runOnUiThread {
-            progressBar.visibility = View.VISIBLE
+                // TODO: Create Twitch Service
+                val network = Network.createHttpClient(this@OAuthActivity)
+
+                // TODO: Get Tokens from Twitch
+                val tokenTwitch: OAuthTokensResponse? = withContext(Dispatchers.IO) {
+                    TwitchApiService(network).getTokens(authorizationCode)
+                }
+
+                // TODO: Save access token and refresh token using the SessionManager class
+                if (tokenTwitch != null) {
+                    SessionManager(this@OAuthActivity).saveAccessToken(tokenTwitch.accessToken)
+                    SessionManager(this@OAuthActivity).saveRefreshToken(tokenTwitch.refreshToken.toString())
+                    streamsIntent()
+                } else {
+                    loginIntent()
+                }
+            }
         }
-
-        // TODO: Create Twitch Service
-        val network = Network.createHttpClient(this@OAuthActivity)
-
-        // TODO: Get Tokens from Twitch
-        val tokenTwitch :OAuthTokensResponse? = runBlocking {
-            TwitchApiService(network).getTokens(authorizationCode)
-        }
-
-        // TODO: Save access token and refresh token using the SessionManager class
-        if (tokenTwitch != null) {
-            SessionManager(this@OAuthActivity).saveAccessToken(tokenTwitch.accessToken)
-            SessionManager(this@OAuthActivity).saveRefreshToken(tokenTwitch.refreshToken.toString())
-            //startActivity(Intent(this, StreamsActivity::class.java))
-        } else {
-            startActivity(Intent(this, LoginActivity::class.java))
-        }
-        Log.d("OAuth", "Access Token: ${tokenTwitch?.accessToken}, Refresh Token: ${tokenTwitch?.refreshToken}, expires: ${tokenTwitch?.expiresInSeconds}")
-
     }
 }
