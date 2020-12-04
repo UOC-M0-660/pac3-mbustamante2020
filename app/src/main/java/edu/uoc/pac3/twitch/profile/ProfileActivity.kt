@@ -3,7 +3,6 @@ package edu.uoc.pac3.twitch.profile
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
-import android.util.Log
 import android.webkit.CookieManager
 import android.widget.Button
 import android.widget.ImageView
@@ -81,12 +80,11 @@ class ProfileActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.userDescriptionEditText).text = user?.description
         findViewById<TextView>(R.id.viewsText).text = user?.viewCount.toString()
 
-        var image = user?.userImageUrl.toString()
-        image = Regex("\\{height\\}|\\{width\\}").replace(image, "200")
+        val imageSize: String = R.dimen.profile_image_size.toString() + "x" + R.dimen.profile_image_size.toString()
         AsyncTask.execute {
             runOnUiThread {
-                Glide.with(this@ProfileActivity)  //2
-                        .load(image)
+                Glide.with(this@ProfileActivity)
+                        .load(user?.userImageUrl?.replace("{width}x{height}", imageSize))
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .into(findViewById<ImageView>(R.id.imageView))
             }

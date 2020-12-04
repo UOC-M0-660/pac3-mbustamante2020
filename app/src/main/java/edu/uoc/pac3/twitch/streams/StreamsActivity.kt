@@ -2,67 +2,69 @@ package edu.uoc.pac3.twitch.streams
 
 import android.content.Context
 import android.content.Intent
+import android.os.AsyncTask
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.whenStarted
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import edu.uoc.pac3.R
+import edu.uoc.pac3.data.SessionManager
 import edu.uoc.pac3.data.TwitchApiService
 import edu.uoc.pac3.data.network.Network
 import edu.uoc.pac3.data.streams.Stream
 import edu.uoc.pac3.data.streams.StreamsResponse
 import edu.uoc.pac3.oauth.LoginActivity
 import edu.uoc.pac3.twitch.profile.ProfileActivity
-import kotlinx.coroutines.runBlocking
-import android.os.Handler
+import kotlinx.coroutines.*
 
 class StreamsActivity : AppCompatActivity() {
 
     private val TAG = "StreamsActivity"
     private val network = Network.createHttpClient(this)
     private lateinit var adapter: StreamsListAdapter
+    private lateinit var swipeRefresh: SwipeRefreshLayout
     private var streamsTwitch: StreamsResponse? = null
     private var cursor: String? = null
-    private lateinit var swipeRefresh: SwipeRefreshLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_streams)
         // Init RecyclerView
         initRecyclerView()
-        // TODO: Get Streams
-        streamsTwitch = runBlocking {
-            TwitchApiService(network).getStreams(null)
-        }
 
-        swipeRefresh = findViewById<SwipeRefreshLayout>(R.id.swipeRefreshLayout)
-        swipeRefresh.isRefreshing = false
-        swipeRefresh.isHorizontalScrollBarEnabled = false
-        swipeRefresh.setOnRefreshListener {
+        swipeRefresh = findViewById(R.id.swipeRefreshLayout)
 
-            //Handler().postDelayed(Runnable {
-                swipeRefresh.isRefreshing = false
-            //}, 0)
-        }
-        //runOnUiThread {
-            //swipeRefresh.visibility = View.INVISIBLE
-        //}
-        // TODO: Get Tokens from Twitch
-        if( streamsTwitch == null ) {
-            Log.i("OAuth 61", "Get Streams")
-            startActivity(Intent(this, LoginActivity::class.java))
-        } else {
-            cursor = streamsTwitch!!.pagination?.cursor
-            Log.i("OAuth 61", "Cursor ${streamsTwitch!!.pagination?.cursor}")
-            streamsTwitch!!.data?.let { adapter.setStream(it, this@StreamsActivity) }
+        lifecycleScope.launch {
+            whenStarted {
+                // TODO: Get Streams
+                streamsTwitch = withContext(Dispatchers.IO) {
+                    TwitchApiService(network).getStreams(null)
+                }
+                // TODO: Get Tokens from Twitch
+                if (streamsTwitch == null) {
+                    Toast.makeText(applicationContext, R.string.error_streams, Toast.LENGTH_LONG).show()
+                } else {
+                    //primera carga de de streams
+                    cursor = streamsTwitch!!.pagination?.cursor
+                    streamsTwitch!!.data?.let { adapter.setStream(it, this@StreamsActivity) }
+
+                }
+            }
+            //se desactiva swipeRefresh, solo se activará cuando haya llegado al final de la lista
+            swipeRefresh.isRefreshing = false
+            swipeRefresh.isEnabled = false
         }
     }
 
@@ -77,30 +79,35 @@ class StreamsActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (!recyclerView.canScrollVertically(1)) {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (!recyclerView.canScrollVertically(1) ) {
+                    lifecycleScope.launch {
+                        whenStarted {
+                            //se activa el swipeRefresh
+                            swipeRefresh.isEnabled = true
+                            swipeRefresh.isRefreshing = true
 
+                            //se hace la peticion de los nuevos streams
+                            streamsTwitch = withContext(Dispatchers.IO) {
+                                TwitchApiService(network).getStreams(cursor)
+                            }
 
-                    streamsTwitch = runBlocking {
-                        swipeRefresh.isRefreshing = true
-                        TwitchApiService(network).getStreams(cursor)
+                            if (streamsTwitch == null) {
+                                Toast.makeText(applicationContext, R.string.error_streams, Toast.LENGTH_LONG).show()
+                            } else {
+                                //cargas posteriores de de streams
+                                cursor = streamsTwitch!!.pagination?.cursor
+                                streamsTwitch!!.data?.let { adapter.addStream(it) }
+                            }
+                        }
+                        //luego de finalizar la carga de los streams se desactiva swipeRefresh
+                        //Handler().postDelayed( {
+                        swipeRefresh.isRefreshing = false
+                        swipeRefresh.isEnabled = false
+                        //}, 1500)
                     }
-                    cursor = streamsTwitch!!.pagination?.cursor
-
-                    Log.i("OAuth last", "Cursor ${streamsTwitch!!.pagination?.cursor}")
-
-                    runOnUiThread {
-                        streamsTwitch!!.data?.let { adapter.addStream(it) }
-
-                        Handler().postDelayed( {
-                            swipeRefresh.isRefreshing = false
-                        }, 1500)
-                    }
-
-
-                    //Toast.makeText(this@StreamsActivity, "Last", Toast.LENGTH_LONG).show()
                 }
+                super.onScrolled(recyclerView, dx, dy)
             }
         })
     }
@@ -133,14 +140,13 @@ class StreamsActivity : AppCompatActivity() {
         fun setStream(streams: List<Stream>, context: Context) {
             this.streams = streams
             this.context = context
-            // Reloads the RecyclerView with new adapter data
             notifyDataSetChanged()
         }
 
+        //se agregan los nuevos streams al listado
         fun addStream(streams: List<Stream>) {
             this.streams = this.streams + streams
-            // Reloads the RecyclerView with new adapter data
-            notifyDataSetChanged()
+            notifyItemRangeInserted(this.streams.size - streams.size, this.streams.size)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -154,58 +160,19 @@ class StreamsActivity : AppCompatActivity() {
             holder.titleView.text = stream.title
             holder.authorView.text = stream.userName
 
-            var image = stream.thumbnailUrl.toString()
-            image = Regex("\\{width\\}").replace(image, "250")
-            image = Regex("\\{height\\}").replace(image, "200")
-
+            val imageSize: String = R.dimen.stream_item_image_width.toString() + "x" + R.dimen.stream_item_image_height.toString()
             this.context?.let {
                 Glide.with(it)
-                        .load(image)
+                        .load(stream.thumbnailUrl?.replace("{width}x{height}", imageSize))
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .into(holder.imageView)
             }
-            Log.i("OAuth stream", "$position -> ${stream.title}")
         }
 
         // Returns total items in Adapter
         override fun getItemCount(): Int {
             return streams.size
         }
-/*
-
-        private val ITEM = 0
-        private val LOADING = 1
-        private var isLoadingAdded = false
-
-
-
-
-        override fun getItemViewType(position: Int): Int {
-            if ( position == streams.lastIndex && isLoadingAdded) {
-                return LOADING
-            } else {
-                return ITEM
-            }
-        }
-
-        fun addLoadingFooter(currentList: ArrayList<Event>) {
-            isLoadingAdded = true
-            currentList.add(Event())
-            submitList(currentList)
-            notifyItemInserted(currentList.lastIndex)
-
-
-        }
-
-        fun removeLoadingFooter(currentList: ArrayList<Event>) {
-            isLoadingAdded = false
-
-            val result = currentList[currentList.lastIndex]
-            currentList.remove(result)
-            submitList(currentList)
-            notifyItemRemoved(currentList.size)
-
-        }*/
 
         // Holds an instance to the view for re-use
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
