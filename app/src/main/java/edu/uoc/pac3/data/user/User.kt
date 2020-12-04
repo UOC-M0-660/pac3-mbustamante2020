@@ -1,6 +1,5 @@
 package edu.uoc.pac3.data.user
 
-import edu.uoc.pac3.data.streams.Stream
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
