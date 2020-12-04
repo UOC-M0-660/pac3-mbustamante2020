@@ -1,19 +1,15 @@
 package edu.uoc.pac3.data.oauth
 
-import android.content.Context
-import android.content.Intent
-import android.util.Log
-import androidx.core.content.ContextCompat.startActivity
-import edu.uoc.pac3.oauth.LoginActivity
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.features.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.client.utils.*
-import io.ktor.http.*
-import io.ktor.util.*
-
+import io.ktor.client.HttpClient
+import io.ktor.client.call.HttpClientCall
+import io.ktor.client.features.HttpClientFeature
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.HttpRequestPipeline
+import io.ktor.client.request.takeFrom
+import io.ktor.client.statement.HttpReceivePipeline
+import io.ktor.client.utils.EmptyContent
+import io.ktor.http.HttpStatusCode
+import io.ktor.util.AttributeKey
 
 /**
  * Copyright 2020, Kurt Renzo Acosta, All rights reserved.
@@ -51,13 +47,19 @@ class OAuthFeature(
 
                 proceed()
             }
+
             scope.receivePipeline.intercept(HttpReceivePipeline.After) {
+                /*
+                * Inicialmente estaba subject.status == HttpStatusCode.Unauthorized, estos valores entregan
+                * los siguiente valores [401 ] == [401 Unauthorized], para solucionar esto se dejó de esta forma
+                * subject.status.value == HttpStatusCode.Unauthorized.value
+                * */
                 // Request is unauthorized
-                if (subject.status == HttpStatusCode.Unauthorized && context.request.headers[RefreshKey] != true.toString()) {
+                if (subject.status.value == HttpStatusCode.Unauthorized.value && context.request.headers[RefreshKey] != true.toString()) {
                     try {
                         // Refresh the Token
                         feature.refreshToken()
-                        Log.i("OAuth", "feature.refreshToken() ${feature.refreshToken()}")
+
                         // Retry the request
                         val call = scope.requestPipeline.execute(
                                 HttpRequestBuilder().takeFrom(context.request),
