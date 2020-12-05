@@ -17,7 +17,7 @@ Según lo leído, en este caso que este hilo siguiese ejecutándose luego que se
 | En el plano principal, la actividad esta corriendo (en foco o por estar en él)      | <li> OnCreate(): Se llama cuando se crea la actividad. Aquí se realizan las inicializaciones de todo tipo. </li><li> OnStart(): Se llama cuando la actividad esta a punto de iniciar y ser mostrada en pantalla. </li><li> OnResumed(): Se llama cuando la actividad esta lista para que el usuario interactué con ella. </li>    |
 | En pausa, se ha perdido el foco, la actividad esta en segundo plano (sigue siendo visible)      | OnPause(): Se ejecuta cuando la actividad esta a punto de ser enviada a segundo plano, ya que otra actividad es puesta en primer plano    |
 | Parada, se ha sustituido la actividad por otra, y queda en segundo plano (no visible)     | OnStop(): La actividad no será visible al usuario     |
-| Ha finalizado la actividad    | OnDestroy(): Esta se llama antes que la actividad se finalize     |
+| Ha finalizado la actividad    | OnDestroy(): Se llama antes que finalice la actividad     |
 
 ---
 
@@ -26,10 +26,21 @@ Según lo leído, en este caso que este hilo siguiese ejecutándose luego que se
 #### Explica el uso de paginación en la API de Twitch.
 
 ##### ¿Qué ventajas ofrece la paginación a la aplicación?
-Escribe aquí tu respuesta
+* Mostrar contenido sin interrupcion, el contenido se irá cargando de forma automatica a medida que se hace scroll.
+* Reduce el tiempo de carga, ya que se irán mostrando una cierta cantidad de elementos, a la vez.
+* En Smartphones y tablets, ayuda a visualizar mejor el contenido, esto es por ir mostrando una cierta cantidad de elmentos a la vez.
+* Permite hacer scroll infinitos
 
 ##### ¿Qué problemas puede tener la aplicación si no se utiliza paginación?
-Escribe aquí tu respuesta
+Según lo investigado, si no se realiza paginación con cursor, pueden aparecer 2 problemas, los cuales son:
+1. Cuando se agrega un elemento, esto hace que los elementos se desplacen un espacio hacia abajo. Se muestra la primera pagina, se agrega un nuevo elemento y luego al mostrar la siguiente página, el último elemento de la primera pagina se repetiría en la siguiente pagina.
+1. Cuando se elimina un elemento, esto hace que los elementos posteriores al elemento que se elimina, se desplacen un espacio hacia arriba. Se muestra la primera pagina, se elimina un elemento y luego se muestra la siguiente pagina, hay un elemento que no se muestra, este elemento es el primer elemento de la siguiente pagina antes de eliminar.
+
+Esto se soluciona con el uso de la paginación con cursor, el cual marca el punto exacto, desde donde se seguiran obteniendo los siguientes resultados.
 
 ##### Lista algunos ejemplos de aplicaciones que usan paginación.
-Escribe aquí tu respuesta
+* Twitter
+* Instagram
+* Facebook
+* Amazon
+* Pinterest
