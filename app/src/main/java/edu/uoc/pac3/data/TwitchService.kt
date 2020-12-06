@@ -42,7 +42,7 @@ class TwitchApiService(private val httpClient: HttpClient) {
             // TODO("Get Streams from Twitch")
             httpClient.get<StreamsResponse>(Endpoints.oauthStreams) {
                 header("Client-Id", OAuthConstants.clientID)
-                parameter("first", 5)
+                //parameter("first", 5)
 
                 // TODO("Support Pagination")
                 if ( !cursor.isNullOrEmpty() ) {

@@ -1,15 +1,13 @@
 package edu.uoc.pac3.data.oauth
 
-import io.ktor.client.HttpClient
-import io.ktor.client.call.HttpClientCall
-import io.ktor.client.features.HttpClientFeature
-import io.ktor.client.request.HttpRequestBuilder
-import io.ktor.client.request.HttpRequestPipeline
-import io.ktor.client.request.takeFrom
-import io.ktor.client.statement.HttpReceivePipeline
-import io.ktor.client.utils.EmptyContent
-import io.ktor.http.HttpStatusCode
-import io.ktor.util.AttributeKey
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.features.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.client.utils.*
+import io.ktor.http.*
+import io.ktor.util.*
 
 /**
  * Copyright 2020, Kurt Renzo Acosta, All rights reserved.

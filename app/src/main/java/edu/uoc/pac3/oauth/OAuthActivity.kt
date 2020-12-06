@@ -3,7 +3,6 @@ package edu.uoc.pac3.oauth
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -22,7 +21,6 @@ import edu.uoc.pac3.data.oauth.OAuthTokensResponse
 import edu.uoc.pac3.twitch.streams.StreamsActivity
 import kotlinx.android.synthetic.main.activity_oauth.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
