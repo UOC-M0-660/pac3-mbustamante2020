@@ -15,9 +15,9 @@ Según lo leído, en el caso que un hilo siguiese ejecutándose luego que se hay
 | Estado del proceso  | Estado del Activity |
 | ------------- | ------------- |
 | En el plano principal, la actividad esta corriendo (en foco)      | <li> OnCreate(): Se ejecuta cuando se crea la actividad. Aquí se realizan las inicializaciones de todo tipo. </li><li> OnStart(): Se ejecuta cuando la actividad esta a punto de iniciar y ser mostrada en pantalla. </li><li> OnResumed(): Se ejecuta cuando la actividad esta lista para que el usuario interactué con ella. </li>    |
-| En pausa, se ha perdido el foco, la actividad esta en segundo plano (sigue siendo visible)      | OnPause(): Se ejecuta cuando la actividad esta a punto de ser enviada a segundo plano, ya que otra actividad es puesta en primer plano    |
+| En pausa, se ha perdido el foco, la actividad esta en segundo plano (sigue siendo visible)      | OnPause(): Se ejecuta cuando la actividad esta a punto de ser enviada a un segundo plano, ya que otra actividad será puesta en primer plano    |
 | Parada, se ha sustituido la actividad por otra, y queda en segundo plano (no visible)     | OnStop(): Se ejecuta en el momento en que la actividad no será visible al usuario     |
-| Ha finalizado la actividad    | OnDestroy(): Se llama antes que finalice la actividad     |
+| Ha finalizado la actividad    | OnDestroy(): Se llama antes que se finalice la actividad     |
 
 ---
 
